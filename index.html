@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Tester</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        #output {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+        .event {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Tester</h1>
+    <div>
+        <input type="text" id="wsUrl" placeholder="Enter WebSocket URL (e.g., ws://localhost:3000)" style="width: 300px;">
+        <button onclick="connectWebSocket()">Connect</button>
+        <button onclick="disconnectWebSocket()" disabled id="disconnectBtn">Disconnect</button>
+    </div>
+    <div>
+        <input type="text" id="eventName" placeholder="Event name (e.g., message)">
+        <input type="text" id="eventData" placeholder="Data (JSON string)">
+        <button onclick="sendMessage()">Send Message</button>
+    </div>
+    <h3>Received Events</h3>
+    <div id="output"></div>
+
+    <script>
+        let socket = null;
+
+        function connectWebSocket() {
+            const url = document.getElementById('wsUrl').value;
+            if (!url) {
+                alert('Please enter a WebSocket URL');
+                return;
+            }
+
+            socket = io(url, {
+                transports: ['websocket'],
+                reconnection: false
+            });
+
+            socket.on('connect', () => {
+                logEvent('Connected to WebSocket');
+                document.getElementById('disconnectBtn').disabled = false;
+            });
+
+            socket.on('disconnect', () => {
+                logEvent('Disconnected from WebSocket');
+                document.getElementById('disconnectBtn').disabled = true;
+            });
+
+            socket.on('error', (error) => {
+                logEvent(`Error: ${error}`);
+            });
+
+            socket.onAny((eventName, ...args) => {
+                logEvent(`Event: ${eventName}, Data: ${JSON.stringify(args)}`);
+            });
+        }
+
+        function disconnectWebSocket() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+        }
+
+        function sendMessage() {
+            if (!socket || !socket.connected) {
+                alert('Not connected to WebSocket');
+                return;
+            }
+
+            const eventName = document.getElementById('eventName').value;
+            const eventData = document.getElementById('eventData').value;
+
+            if (!eventName) {
+                alert('Please enter an event name');
+                return;
+            }
+
+            try {
+                const data = eventData ? JSON.parse(eventData) : {};
+                socket.emit(eventName, data);
+                logEvent(`Sent Event: ${eventName}, Data: ${JSON.stringify(data)}`);
+            } catch (e) {
+                alert('Invalid JSON data');
+            }
+        }
+
+        function logEvent(message) {
+            const output = document.getElementById('output');
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event';
+            eventDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(eventDiv);
+            output.scrollTop = output.scrollHeight;
+        }
+    </script>
+</body>
+</html>
