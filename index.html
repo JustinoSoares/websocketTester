@@ -76,7 +76,7 @@
             });
 
             socket.onAny((eventName, ...args) => {
-                logEvent(`Event: ${eventName}, Data: ${JSON.stringify(args)}`);
+                logEvent(`Event: ${eventName}, Data: ${JSON.stringify(args, null, 2)}`);
             });
         }
 
